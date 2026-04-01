@@ -2,14 +2,13 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
-import AssistantPage from './pages/AssistantPage'
 import TicketsPage from './pages/TicketsPage'
 import TicketDetailPage from './pages/TicketDetailPage'
 import DocumentsPage from './pages/DocumentsPage'
 import DocumentDetailPage from './pages/DocumentDetailPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
-import TicketGenerationPage from './pages/TicketGenerationPage'
+import ChatPage from './pages/ChatPage'
 
 function AppShell() {
   return (
@@ -19,8 +18,8 @@ function AppShell() {
         <TopBar />
         <main className="flex flex-1 overflow-hidden">
           <Routes>
-            <Route path="/"                    element={<AssistantPage />} />
-            <Route path="/ticket-chat"         element={<TicketGenerationPage />} />
+            <Route path="/"                    element={<ChatPage botId="general" />} />
+            <Route path="/ticket-chat"         element={<ChatPage botId="ticket" />} />
             <Route path="/tickets"             element={<TicketsPage />} />
             <Route path="/tickets/:uuid"       element={<TicketDetailPage />} />
             <Route path="/documents"           element={<DocumentsPage />} />

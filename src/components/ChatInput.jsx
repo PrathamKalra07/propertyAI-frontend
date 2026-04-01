@@ -8,18 +8,15 @@ export default function ChatInput({ onSend, disabled,model='general' }) {
   
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      console.log('content : ',value);
-      onSend({
-        id:Date.now(),
-        'role' : 'user',
-        value
-      },model);
-
-      setValue('')
-      
+        e.preventDefault()
+        if (!value.trim()) return
+        onSend(value.trim(), model)
+        setValue('')
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto'
+        }
     }
-  }
+}
 
   
 
