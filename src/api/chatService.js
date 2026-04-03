@@ -119,7 +119,7 @@ export const sendMessage = async (content, onChunk) => {
                 if (parsed.chunk) {
                     onChunk(parsed.chunk); 
                 }
-
+                
                 if (parsed.done) {
                     return;
                 }
@@ -130,14 +130,15 @@ export const sendMessage = async (content, onChunk) => {
     }
 };
 
-export const chatTicket = async (content, conversationId)=>{
+export const chatTicket = async (content, conversationId,token)=>{
     try{
         
     const response = await fetch('http://localhost:8000/maintenance/chat', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Accept': 'text/event-stream' 
+            'Accept': 'text/event-stream',
+            'Authorization':'Bearer '+token
         },
         body: JSON.stringify(
             {
@@ -161,6 +162,110 @@ export const chatTicket = async (content, conversationId)=>{
     
     }catch(error){
         console.error("Error in chatTicket:", error);
+    }
+}
+
+export const chatLease = async (content, conversationId,token)=>{
+    try{
+        
+    const response = await fetch('http://localhost:8000/leasing/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream',
+            'Authorization':'Bearer '+token
+        },
+        body: JSON.stringify(
+            {
+            "message": content,
+            "conversation_id": conversationId
+            }
+        )
+    });
+
+    if (!response.body) {
+        throw new Error("No readable stream from server");
+    }
+
+    const res = await response.json();
+
+    return res.response;
+
+    
+    }catch(error){
+        console.error("Error in chatTicket:", error);
+    }
+}
+
+export const fetchTickets = async (token) =>{
+    try{
+        
+    const response = await fetch('http://localhost:8000/tickets', {
+        method: 'GET',
+        headers: {
+            'Authorization':'Bearer '+token
+        }
+    });
+
+    if (!response.body) {
+        throw new Error("No tickets found");
+    }
+
+    const res = await response.json();
+    console.log("res : ",res);
+    return res.tickets;
+
+    
+    }catch(error){
+        console.error("Error in getting tickets:", error);
+    }
+}
+
+export const fetchLeads = async (token) =>{
+    try{
+        
+    const response = await fetch('http://localhost:8000/leads', {
+        method: 'GET',
+        headers: {
+            'Authorization':'Bearer '+token
+        }
+    });
+
+    if (!response.body) {
+        throw new Error("No Leads found");
+    }
+
+    const res = await response.json();
+    console.log("res : ",res);
+    return res.leads;
+
+    
+    }catch(error){
+        console.error("Error in getting tickets:", error);
+    }
+}
+
+export const fetchDocuments = async (token) =>{
+    try{
+        
+    const response = await fetch('http://localhost:8000/documents/list', {
+        method: 'GET',
+        headers: {
+            'Authorization':'Bearer '+token
+        }
+    });
+
+    if (!response.body) {
+        throw new Error("No Documents found");
+    }
+
+    const res = await response.json();
+    console.log("res : ",res);
+    return res.documents;
+
+    
+    }catch(error){
+        console.error("Error in getting tickets:", error);
     }
 }
 

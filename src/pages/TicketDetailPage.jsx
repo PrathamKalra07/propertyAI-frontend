@@ -1,11 +1,12 @@
 import React from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Clock, AlertCircle, CheckCircle, User, Tag, Calendar, MapPin } from 'lucide-react'
-import { TICKETS_DATA, STATUS_CONFIG, PRIORITY_COLOR } from './TicketsPage'
+import { STATUS_CONFIG, PRIORITY_COLOR } from './TicketsPage'
 
 export default function TicketDetailPage() {
   const { uuid } = useParams()
-  const ticket = TICKETS_DATA.find((t) => t.uuid === uuid)
+  // const ticket = TICKETS_DATA.find((t) => t.uuid === uuid)
+  const {ticket} = useParams()
 
   if (!ticket) {
     return (

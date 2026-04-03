@@ -3,17 +3,19 @@ import ChatMessage from '../components/ChatMessage';
 import QuickActions from '../components/QuickActions';
 import ChatInput from '../components/ChatInput';
 import { useChat } from '../context/ChatContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function ChatPage({ botId }) {
     const bottomRef = useRef(null);
     const { getBot, addMessage, generating } = useChat();
     const { messages } = getBot(botId);
+    const {user} = useAuth()
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, generating]);
 
-    const handleSend = (content) => addMessage(content, botId);
+    const handleSend = (content) => addMessage(content, botId,user.access_token);
 
     return (
         <div className="flex flex-col flex-1 overflow-hidden">

@@ -1,7 +1,9 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Sparkles, Database, Hash, Tag } from 'lucide-react'
-import { NAV_ROUTES } from '../routes'
+import { Sparkles, Database, Hash, Tag, Building, Building2 } from 'lucide-react'
+import {getNavRoutes} from '../routes'
+import { useAuth } from '../context/AuthContext'
+import { MessageSquare } from 'lucide-react'
 
 const systemStats = [
   { icon: Database, label: 'Documents', value: '127' },
@@ -10,13 +12,17 @@ const systemStats = [
 ]
 
 export default function Sidebar() {
+
+  const {user} = useAuth();
+
+  const NAV_ROUTES = getNavRoutes(user?.is_admin);
   return (
     <aside className="w-72 min-w-[280px] bg-white border-r border-gray-200 flex flex-col h-full select-none">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Sparkles size={18} className="text-white" />
+            <Building2 size={18} className="text-white" />
           </div>
           <div>
             <div className="font-semibold text-gray-900 text-[15px] leading-tight">PropertyAI</div>
@@ -66,6 +72,7 @@ export default function Sidebar() {
       </nav>
 
       {/* System Overview */}
+      {user?.is_admin && (
       <div className="px-4 pb-3">
         <div className="border border-gray-200 rounded-xl px-4 py-3">
           <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -88,6 +95,9 @@ export default function Sidebar() {
           <span className="text-xs text-gray-600 font-medium">All systems operational</span>
         </div>
       </div>
+      )
+      }
+
     </aside>
   )
 }

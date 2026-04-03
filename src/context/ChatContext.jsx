@@ -1,6 +1,8 @@
-import React, { createContext, useState, useCallback, useContext } from 'react';
-import { sendMessage, chatTicket } from '../api/ChatService';
+import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
+import { sendMessage, chatTicket,chatLease, fetchTickets, fetchLeads, fetchDocuments } from '../api/ChatService';
 import { v4 as uuid } from 'uuid';
+import { cache } from 'react';
+import { useAuth } from './AuthContext';
 
 const WELCOME_CONTENT = `Hello! I'm your PropertyAI assistant, powered by advanced AI trained on all your property documents and policies. I'm here to help you with:
 
@@ -27,18 +29,26 @@ export const BOT_CONFIG = {
     general: {
         label: 'General Assistant',
         streaming: true,
-        handler: async (content, _sessionId, onChunk) => {
+        handler: async (content, _sessionId, token,onChunk) => {
             await sendMessage(content, onChunk);
         },
     },
     ticket: {
         label: 'Ticket Assistant',
         streaming: false,
-        handler: async (content, sessionId, onChunk) => {
-            const res = await chatTicket(content, sessionId);
+        handler: async (content, sessionId, token,onChunk) => {
+            const res = await chatTicket(content, sessionId,token);
             onChunk(res);
         },
     },
+    lease:{
+        label: 'Lease Assistant',
+        streaming: false,
+        handler: async (content,sessionId,token,onChunk) =>{
+            const res = await chatLease(content,sessionId,token);
+            onChunk(res);
+        }
+    }
 };
 
 const makeBotState = () => ({
@@ -48,60 +58,42 @@ const makeBotState = () => ({
 
 const ChatContext = createContext();
 
+
 export const ChatProvider = ({ children }) => {
+    const { user } = useAuth();
     const [bots, setBots] = useState(
         () => Object.fromEntries(Object.keys(BOT_CONFIG).map(k => [k, makeBotState()]))
     );
     const [generating, setGenerating] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [tickets,setTickets] = useState([]);
+    const [leads,setLeads] = useState([]);
+    const [documents,setDocuments] = useState([]);
 
-    // const addMessage = useCallback(async (content, botId) => {
-    //     const config = BOT_CONFIG[botId];
-    //     if (!config) throw new Error(`Unknown bot: ${botId}`);
+    const cacheAllData = async ()=>{
+        try{
+            console.log('logged in userrrr : ',user);
+            const ticketsData = await fetchTickets(user.access_token);
+            const leadsData = await fetchLeads(user.access_token);
+            const documentsData = await fetchDocuments(user.access_token);
 
-    //     const userMessage = { id: Date.now(), role: 'user', content };
-    //     const botMsgId = Date.now() + 1;
+            setTickets(ticketsData);
+            setLeads(leadsData);
+            setDocuments(documentsData);
 
-    //     setBots(prev => ({
-    //         ...prev,
-    //         [botId]: {
-    //             ...prev[botId],
-    //             messages: [
-    //                 ...prev[botId].messages,
-    //                 userMessage,
-    //                 { id: botMsgId, role: 'assistant', content: '' },
-    //             ],
-    //         },
-    //     }));
+        }catch(e){
+            console.error('error : ',e);
+        }finally{
+            setIsLoading(false);
+        }
+    }
 
-    //     setIsLoading(true);
-    //     setGenerating(true);
+    useEffect(() => {
+        if (!user?.access_token) return; 
+        cacheAllData();
+    }, [user]);
 
-    //     try {
-    //         const sessionId = bots[botId].sessionId;
-
-    //         await config.handler(content, sessionId, (chunk) => {
-    //             setBots(prev => ({
-    //                 ...prev,
-    //                 [botId]: {
-    //                     ...prev[botId],
-    //                     messages: prev[botId].messages.map(msg =>
-    //                         msg.id === botMsgId
-    //                             ? { ...msg, content: msg.content + chunk }
-    //                             : msg
-    //                     ),
-    //                 },
-    //             }));
-    //         });
-    //     } catch (error) {
-    //         console.error(`[ChatContext] addMessage error for bot "${botId}":`, error);
-    //     } finally {
-    //         setIsLoading(false);
-    //         setGenerating(false);
-    //     }
-    // }, [bots]);
-
-    const addMessage = useCallback(async (content, botId) => {
+    const addMessage = useCallback(async (content, botId,token) => {
         const config = BOT_CONFIG[botId];
         if (!config) throw new Error(`Unknown bot: ${botId}`);
 
@@ -130,7 +122,7 @@ export const ChatProvider = ({ children }) => {
         setGenerating(true);
 
         try {
-            await config.handler(content, sessionId, (chunk) => {
+            await config.handler(content, sessionId, token, (chunk) => {
                 setBots(prev => ({
                     ...prev,
                     [botId]: {
@@ -159,10 +151,11 @@ export const ChatProvider = ({ children }) => {
         }
     }, []);
 
+
     const getBot = useCallback((botId) => bots[botId] ?? makeBotState(), [bots]);
 
     return (
-        <ChatContext.Provider value={{ getBot, addMessage, clearMessages, generating, isLoading }}>
+        <ChatContext.Provider value={{ getBot,tickets,leads,documents, addMessage, clearMessages, generating, isLoading }}>
             {children}
         </ChatContext.Provider>
     );

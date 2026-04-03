@@ -1,59 +1,26 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Ticket, Clock, CheckCircle, AlertCircle, ChevronRight, Plus } from 'lucide-react'
+import { Ticket, Clock, CheckCircle, AlertCircle, ChevronRight, Plus, Loader } from 'lucide-react'
+import { useChat } from '../context/ChatContext'
+import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
 
-export const TICKETS_DATA = [
-  {
-    uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    id: 'TK-001',
-    title: 'Leaking faucet in kitchen',
-    status: 'open',
-    priority: 'high',
-    date: '2024-01-15',
-    category: 'Plumbing',
-    description:
-      'The kitchen faucet has been dripping constantly for 3 days. Water pressure seems normal but the handle drips even when fully closed.',
-    assignee: 'Mike Torres',
-    property: 'Unit 4B, 123 Maple Street',
-  },
-  {
-    uuid: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
-    id: 'TK-002',
-    title: 'AC unit not cooling properly',
-    status: 'in-progress',
-    priority: 'medium',
-    date: '2024-01-12',
-    category: 'HVAC',
-    description:
-      'The central AC is running but the temperature does not drop below 78°F even when set to 68°F. Filter was replaced last month.',
-    assignee: 'Sarah Chen',
-    property: 'Unit 4B, 123 Maple Street',
-  },
-  {
-    uuid: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
-    id: 'TK-003',
-    title: 'Broken window latch in bedroom',
-    status: 'open',
-    priority: 'low',
-    date: '2024-01-10',
-    category: 'Windows',
-    description: 'The latch on the bedroom window (north-facing) is broken and the window cannot be secured.',
-    assignee: null,
-    property: 'Unit 4B, 123 Maple Street',
-  },
-  {
-    uuid: 'd4e5f6a7-b8c9-0123-defa-234567890123',
-    id: 'TK-004',
-    title: 'Hallway light bulb replacement',
-    status: 'resolved',
-    priority: 'low',
-    date: '2024-01-05',
-    category: 'Electrical',
-    description: 'The hallway ceiling light bulb has burned out and needs replacement.',
-    assignee: 'Mike Torres',
-    property: 'Unit 4B, 123 Maple Street',
-  },
-]
+//  {
+//     uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+//     id: 'TK-001',
+//     title: 'Leaking faucet in kitchen',
+//     status: 'open',
+//     priority: 'high',
+//     date: '2024-01-15',
+//     category: 'Plumbing',
+//     description:
+//       'The kitchen faucet has been dripping constantly for 3 days. Water pressure seems normal but the handle drips even when fully closed.',
+//     assignee: 'Mike Torres',
+//     property: 'Unit 4B, 123 Maple Street',
+//   },
+// export let TICKETS_DATA = []
+
+
 
 export const STATUS_CONFIG = {
   open: { label: 'Open', color: 'bg-blue-100 text-blue-700', icon: Clock },
@@ -62,12 +29,56 @@ export const STATUS_CONFIG = {
 }
 
 export const PRIORITY_COLOR = {
-  high: 'bg-red-100 text-red-700',
-  medium: 'bg-orange-100 text-orange-700',
-  low: 'bg-gray-100 text-gray-600',
+  emergency : 'bg-red-100 text-red-700',
+  urgent : 'bg-orange-100 text-orange-800',
+  routine : 'bg-yellow-100 text-yellow-800',
+  cosmetic : 'bg-gray-100 text-gray-600',
 }
 
+const SkeletonTicket = () => (
+  <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4 animate-pulse">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-3 w-12 bg-gray-200 rounded" />
+          <div className="h-4 w-16 bg-gray-200 rounded-full" />
+          <div className="h-4 w-14 bg-gray-100 rounded-full" />
+        </div>
+        <div className="h-3.5 w-3/4 bg-gray-200 rounded mb-2.5" />
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-16 bg-gray-100 rounded" />
+          <div className="h-3 w-20 bg-gray-100 rounded" />
+          <div className="h-3 w-24 bg-gray-100 rounded" />
+        </div>
+      </div>
+      <div className="w-4 h-4 bg-gray-100 rounded mt-1 flex-shrink-0" />
+    </div>
+  </div>
+);
+
 export default function TicketsPage() {
+
+  const {tickets,isLoading} = useChat();
+
+const mapTicket = (t) => ({
+  uuid: t.ticket_id,
+  id: t.ticket_id,
+
+  title: t.issue_description,
+
+  status: t.status,
+  priority: t.priority,
+
+  date: t.created_at,
+  category: t.issue_category,
+
+  description: t.issue_description,
+  assignee: t.assigned_to,
+
+  property: `Unit ${t.unit_number}, ${t.property_name}`,
+});
+
+
   return (
     <div className="flex-1 overflow-y-auto p-6 chat-scroll">
       <div className="max-w-3xl mx-auto">
@@ -82,20 +93,18 @@ export default function TicketsPage() {
               <p className="text-sm text-gray-500">Track your maintenance requests</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-700 transition-colors">
-            <Plus size={15} />
-            New Ticket
-          </button>
         </div>
 
         {/* Ticket list */}
         <div className="space-y-3">
-          {TICKETS_DATA.map((ticket) => {
+          {isLoading?
+          Array.from({ length: 5 }).map((_, i) => <SkeletonTicket key={i} />):
+          tickets?.map(mapTicket).map((ticket) => {
             const status = STATUS_CONFIG[ticket.status]
             const StatusIcon = status.icon
             return (
               <Link
-                key={ticket.uuid}
+                key={ticket.ticket_id}
                 to={`/tickets/${ticket.uuid}`}
                 className="block bg-white border border-gray-200 rounded-2xl px-5 py-4 hover:border-gray-300 hover:shadow-sm transition-all duration-150 group"
               >
