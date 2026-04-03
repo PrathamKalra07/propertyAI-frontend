@@ -3,6 +3,7 @@ import { sendMessage, chatTicket,chatLease, fetchTickets, fetchLeads, fetchDocum
 import { v4 as uuid } from 'uuid';
 import { cache } from 'react';
 import { useAuth } from './AuthContext';
+import { refreshTokenApi } from '../api/authService';
 
 const WELCOME_CONTENT = `Hello! I'm your PropertyAI assistant, powered by advanced AI trained on all your property documents and policies. I'm here to help you with:
 
@@ -73,6 +74,7 @@ export const ChatProvider = ({ children }) => {
     const cacheAllData = async ()=>{
         try{
             console.log('logged in userrrr : ',user);
+
             const ticketsData = await fetchTickets(user.access_token);
             const leadsData = await fetchLeads(user.access_token);
             const documentsData = await fetchDocuments(user.access_token);
@@ -82,7 +84,22 @@ export const ChatProvider = ({ children }) => {
             setDocuments(documentsData);
 
         }catch(e){
-            console.error('error : ',e);
+            if(e.messages.contains('Access token expired')){
+                console.error('error : ',e);
+                const {refresh_token,access_token}=refreshTokenApi(user.refresh_token);
+                const updatedTokens = {
+                    ...user,
+                    refresh_token : refresh_token,
+                    access_token : access_token
+                }
+
+                sessionStorage.setItem("user",updatedTokens);
+                sessionStorage.getItem("user");
+                console.log("updated the tokens, retrying");
+
+                await cacheAllData();
+            }
+            
         }finally{
             setIsLoading(false);
         }

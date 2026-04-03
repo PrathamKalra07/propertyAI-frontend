@@ -26,3 +26,13 @@ export const logoutUser = async (token) => {
     );
     return response.data;
 };
+
+export const refreshTokenApi = async (refreshToken) => {
+    const response = await fetch('http://localhost:8000/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    if (!response.ok) throw new Error("Refresh failed");
+    return response.json(); // { access_token, refresh_token }
+};
